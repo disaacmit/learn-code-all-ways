@@ -1,10 +1,13 @@
-import { Flame, Zap, Heart } from "lucide-react";
+import { Flame, Zap, Heart, LogOut } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { userStats } from "@/data/languages";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 
 const TopBar = () => {
   const location = useLocation();
+  const { profile, signOut } = useAuth();
 
   const navItems = [
     { label: "Learn", path: "/" },
@@ -52,7 +55,7 @@ const TopBar = () => {
           })}
         </nav>
 
-        {/* Stats */}
+        {/* Stats & User */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1 text-sm font-bold text-streak">
             <Flame className="h-5 w-5" />
@@ -66,6 +69,15 @@ const TopBar = () => {
             <Heart className="h-5 w-5 fill-current" />
             <span>{userStats.hearts}</span>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={signOut}
+            className="ml-1 h-9 w-9 text-muted-foreground hover:text-destructive"
+            title={`Signed in as ${profile?.display_name ?? "User"}`}
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
         </div>
       </div>
     </header>

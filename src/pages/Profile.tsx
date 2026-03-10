@@ -1,8 +1,21 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Flame, Zap, Heart, Trophy, BookOpen, Code2 } from "lucide-react";
+import { Flame, Zap, Heart, Trophy, BookOpen, Code2, Pencil, Check, X } from "lucide-react";
 import { userStats, languages } from "@/data/languages";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 const Profile = () => {
+  const { user, profile, refreshProfile } = useAuth();
+  const { toast } = useToast();
+  const [editing, setEditing] = useState(false);
+  const [displayName, setDisplayName] = useState(profile?.display_name ?? "");
+  const [bio, setBio] = useState(profile?.bio ?? "");
+  const [saving, setSaving] = useState(false);
+
   const startedLanguages = languages.filter((l) => l.completedLessons > 0);
 
   const stats = [
@@ -14,6 +27,31 @@ const Profile = () => {
     { icon: Heart, label: "Hearts", value: userStats.hearts, color: "text-heart" },
   ];
 
+  const handleSave = async () => {
+    if (!user) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ display_name: displayName.trim() || "Code Explorer", bio: bio.trim() || null })
+      .eq("user_id", user.id);
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      await refreshProfile();
+      toast({ title: "Profile updated! ✨" });
+      setEditing(false);
+    }
+    setSaving(false);
+  };
+
+  const initials = (profile?.display_name ?? "CE")
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
       {/* Profile header */}
@@ -23,13 +61,50 @@ const Profile = () => {
         className="mb-8 flex flex-col items-center text-center"
       >
         <div className="mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-hero text-4xl font-black text-primary-foreground">
-          CE
+          {initials}
         </div>
-        <h1 className="text-2xl font-black text-foreground">Code Explorer</h1>
-        <div className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
-          <Trophy className="h-4 w-4 text-streak" />
-          {userStats.rank}
-        </div>
+
+        {editing ? (
+          <div className="flex flex-col items-center gap-3">
+            <Input
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Display name"
+              className="max-w-xs text-center font-bold"
+              maxLength={50}
+            />
+            <Input
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder="Write a short bio..."
+              className="max-w-xs text-center text-sm"
+              maxLength={200}
+            />
+            <div className="flex gap-2">
+              <Button size="sm" onClick={handleSave} disabled={saving} className="rounded-xl">
+                <Check className="mr-1 h-4 w-4" /> Save
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setEditing(false)} className="rounded-xl">
+                <X className="mr-1 h-4 w-4" /> Cancel
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-black text-foreground">{profile?.display_name ?? "Code Explorer"}</h1>
+              <button onClick={() => { setDisplayName(profile?.display_name ?? ""); setBio(profile?.bio ?? ""); setEditing(true); }}>
+                <Pencil className="h-4 w-4 text-muted-foreground hover:text-primary" />
+              </button>
+            </div>
+            {profile?.bio && <p className="mt-1 text-sm text-muted-foreground">{profile.bio}</p>}
+            <p className="mt-1 text-xs text-muted-foreground">{user?.email}</p>
+            <div className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
+              <Trophy className="h-4 w-4 text-streak" />
+              {userStats.rank}
+            </div>
+          </>
+        )}
       </motion.div>
 
       {/* Stats grid */}
