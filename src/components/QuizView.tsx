@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, X, ArrowRight, Trophy } from "lucide-react";
+import { Check, X, ArrowRight, ArrowLeft, Trophy } from "lucide-react";
 import { QuizQuestion } from "@/data/languages";
 
 interface QuizViewProps {
@@ -14,29 +14,37 @@ interface QuizViewProps {
 
 const QuizView = ({ questions, languageName, lessonTitle, xpReward, onComplete, onExit }: QuizViewProps) => {
   const [currentQ, setCurrentQ] = useState(0);
-  const [selected, setSelected] = useState<number | null>(null);
-  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
-  const [score, setScore] = useState(0);
+  const [answers, setAnswers] = useState<(number | null)[]>(new Array(questions.length).fill(null));
   const [finished, setFinished] = useState(false);
+  const [direction, setDirection] = useState(1); // 1 = forward, -1 = back
 
   const question = questions[currentQ];
-  const progress = ((currentQ + (isCorrect !== null ? 1 : 0)) / questions.length) * 100;
+  const selected = answers[currentQ];
+  const isCorrect = selected !== null ? selected === question.correctIndex : null;
+  const answeredCount = answers.filter((a) => a !== null).length;
+  const progress = (answeredCount / questions.length) * 100;
+  const score = answers.reduce((s, a, i) => s + (a === questions[i].correctIndex ? 1 : 0), 0);
 
   const handleSelect = (index: number) => {
-    if (isCorrect !== null) return;
-    setSelected(index);
-    const correct = index === question.correctIndex;
-    setIsCorrect(correct);
-    if (correct) setScore((s) => s + 1);
+    if (answers[currentQ] !== null) return;
+    const newAnswers = [...answers];
+    newAnswers[currentQ] = index;
+    setAnswers(newAnswers);
   };
 
   const handleNext = () => {
     if (currentQ < questions.length - 1) {
+      setDirection(1);
       setCurrentQ((q) => q + 1);
-      setSelected(null);
-      setIsCorrect(null);
-    } else {
+    } else if (answeredCount === questions.length) {
       setFinished(true);
+    }
+  };
+
+  const handlePrev = () => {
+    if (currentQ > 0) {
+      setDirection(-1);
+      setCurrentQ((q) => q - 1);
     }
   };
 
@@ -99,9 +107,9 @@ const QuizView = ({ questions, languageName, lessonTitle, xpReward, onComplete, 
       <AnimatePresence mode="wait">
         <motion.div
           key={currentQ}
-          initial={{ x: 50, opacity: 0 }}
+          initial={{ x: 50 * direction, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
-          exit={{ x: -50, opacity: 0 }}
+          exit={{ x: -50 * direction, opacity: 0 }}
           transition={{ duration: 0.3 }}
         >
           <h2 className="mb-6 text-xl font-extrabold text-foreground sm:text-2xl">
@@ -123,7 +131,7 @@ const QuizView = ({ questions, languageName, lessonTitle, xpReward, onComplete, 
                 <button
                   key={i}
                   onClick={() => handleSelect(i)}
-                  disabled={isCorrect !== null}
+                  disabled={selected !== null}
                   className={`flex w-full items-center gap-3 rounded-2xl border-2 px-5 py-4 text-left text-base font-semibold transition-all ${style}`}
                 >
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-sm font-bold text-muted-foreground">
@@ -143,7 +151,7 @@ const QuizView = ({ questions, languageName, lessonTitle, xpReward, onComplete, 
         </motion.div>
       </AnimatePresence>
 
-      {/* Feedback & Next */}
+      {/* Feedback */}
       <AnimatePresence>
         {isCorrect !== null && (
           <motion.div
@@ -161,16 +169,29 @@ const QuizView = ({ questions, languageName, lessonTitle, xpReward, onComplete, 
               </p>
               <p className="mt-1 text-sm text-muted-foreground">{question.explanation}</p>
             </div>
-            <button
-              onClick={handleNext}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-hero px-6 py-3 text-base font-bold text-primary-foreground transition-transform hover:scale-[1.02]"
-            >
-              {currentQ < questions.length - 1 ? "Next" : "Finish"}
-              <ArrowRight className="h-5 w-5" />
-            </button>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Navigation buttons */}
+      <div className="mt-6 flex items-center gap-3">
+        <button
+          onClick={handlePrev}
+          disabled={currentQ === 0}
+          className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-border px-6 py-3 text-base font-bold text-foreground transition-all hover:border-primary/40 disabled:opacity-30 disabled:hover:border-border"
+        >
+          <ArrowLeft className="h-5 w-5" />
+          Previous
+        </button>
+        <button
+          onClick={handleNext}
+          disabled={currentQ === questions.length - 1 && answeredCount < questions.length}
+          className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-hero px-6 py-3 text-base font-bold text-primary-foreground transition-transform hover:scale-[1.02] disabled:opacity-30 disabled:hover:scale-100"
+        >
+          {currentQ < questions.length - 1 ? "Next" : "Finish"}
+          <ArrowRight className="h-5 w-5" />
+        </button>
+      </div>
     </div>
   );
 };
