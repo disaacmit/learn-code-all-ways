@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
-import { Check, Lock, Star, Zap } from "lucide-react";
+import { Check, Lock, Star, Zap, Crown } from "lucide-react";
 import { Lesson } from "@/data/languages";
+import { usePremium } from "@/contexts/PremiumContext";
+import { useNavigate } from "react-router-dom";
 
 interface LessonNodeProps {
   lesson: Lesson;
@@ -9,6 +11,9 @@ interface LessonNodeProps {
 }
 
 const LessonNode = ({ lesson, index, onStart }: LessonNodeProps) => {
+  const { isPremium } = usePremium();
+  const navigate = useNavigate();
+  const isPremiumLocked = !isPremium && index >= 12;
   const isEven = index % 2 === 0;
   const offset = isEven ? -30 : 30;
 
