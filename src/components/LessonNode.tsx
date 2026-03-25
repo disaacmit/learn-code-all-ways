@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
-import { Check, Lock, Star, Zap } from "lucide-react";
+import { Check, Lock, Star, Zap, Crown } from "lucide-react";
 import { Lesson } from "@/data/languages";
+import { usePremium } from "@/contexts/PremiumContext";
+import { useNavigate } from "react-router-dom";
 
 interface LessonNodeProps {
   lesson: Lesson;
@@ -9,6 +11,9 @@ interface LessonNodeProps {
 }
 
 const LessonNode = ({ lesson, index, onStart }: LessonNodeProps) => {
+  const { isPremium } = usePremium();
+  const navigate = useNavigate();
+  const isPremiumLocked = !isPremium && index >= 12;
   const isEven = index % 2 === 0;
   const offset = isEven ? -30 : 30;
 
@@ -39,13 +44,16 @@ const LessonNode = ({ lesson, index, onStart }: LessonNodeProps) => {
 
       {/* Node */}
       <button
-        onClick={() => lesson.status !== "locked" && onStart(lesson)}
-        disabled={lesson.status === "locked"}
-        className={`flex h-16 w-16 items-center justify-center rounded-full border-4 transition-transform ${
-          statusStyles[lesson.status]
-        } ${lesson.status === "current" ? "hover:scale-110" : ""}`}
+        onClick={() => {
+          if (isPremiumLocked) { navigate("/premium"); return; }
+          if (lesson.status !== "locked") onStart(lesson);
+        }}
+        disabled={lesson.status === "locked" && !isPremiumLocked}
+        className={`relative flex h-16 w-16 items-center justify-center rounded-full border-4 transition-transform ${
+          isPremiumLocked ? "bg-streak/10 border-streak/30 text-streak cursor-pointer hover:scale-105" : statusStyles[lesson.status]
+        } ${!isPremiumLocked && lesson.status === "current" ? "hover:scale-110" : ""}`}
       >
-        {iconMap[lesson.status]}
+        {isPremiumLocked ? <Crown className="h-5 w-5" /> : iconMap[lesson.status]}
       </button>
 
       {/* Label */}
