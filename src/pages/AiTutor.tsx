@@ -34,9 +34,20 @@ const AiTutor = () => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
+  const { canUseAi, trackAiMessage, aiRemaining } = useUsage();
+
   const sendMessage = async (text?: string) => {
     const messageText = text || input.trim();
     if (!messageText || isLoading) return;
+
+    if (!canUseAi) {
+      toast.error("Daily free limit reached! Upgrade to Premium for unlimited access.");
+      return;
+    }
+    if (!trackAiMessage()) {
+      toast.error("Daily free limit reached! Upgrade to Premium for unlimited access.");
+      return;
+    }
 
     const userMsg: Message = { role: "user", content: messageText };
     setMessages((prev) => [...prev, userMsg]);
