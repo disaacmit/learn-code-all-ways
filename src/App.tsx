@@ -34,6 +34,15 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const AppContent = () => {
+  const { isPremium } = usePremium();
+  return (
+    <UsageProvider isPremium={isPremium}>
+      <AppRoutes />
+    </UsageProvider>
+  );
+};
+
 const AppRoutes = () => {
   const { user } = useAuth();
   return (
