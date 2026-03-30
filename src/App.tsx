@@ -4,7 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { PremiumProvider } from "@/contexts/PremiumContext";
+import { PremiumProvider, usePremium } from "@/contexts/PremiumContext";
+import { UsageProvider } from "@/contexts/UsageContext";
 import TopBar from "@/components/TopBar";
 import Index from "./pages/Index";
 import LearnLanguage from "./pages/LearnLanguage";
@@ -31,6 +32,15 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
   if (!user) return <Navigate to="/auth" replace />;
   return <>{children}</>;
+};
+
+const AppContent = () => {
+  const { isPremium } = usePremium();
+  return (
+    <UsageProvider isPremium={isPremium}>
+      <AppRoutes />
+    </UsageProvider>
+  );
 };
 
 const AppRoutes = () => {
@@ -62,7 +72,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <PremiumProvider>
-            <AppRoutes />
+            <AppContent />
           </PremiumProvider>
         </AuthProvider>
       </BrowserRouter>

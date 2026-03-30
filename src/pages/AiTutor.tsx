@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Bot, User, Sparkles, Loader2, Lock, Crown } from "lucide-react";
+import { Send, Bot, User, Sparkles, Loader2, Crown } from "lucide-react";
 import { languages } from "@/data/languages";
 import { usePremium } from "@/contexts/PremiumContext";
+import { useUsage } from "@/contexts/UsageContext";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface Message {
   role: "user" | "assistant";
@@ -32,9 +34,20 @@ const AiTutor = () => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
+  const { canUseAi, trackAiMessage, aiRemaining } = useUsage();
+
   const sendMessage = async (text?: string) => {
     const messageText = text || input.trim();
     if (!messageText || isLoading) return;
+
+    if (!canUseAi) {
+      toast.error("Daily free limit reached! Upgrade to Premium for unlimited access.");
+      return;
+    }
+    if (!trackAiMessage()) {
+      toast.error("Daily free limit reached! Upgrade to Premium for unlimited access.");
+      return;
+    }
 
     const userMsg: Message = { role: "user", content: messageText };
     setMessages((prev) => [...prev, userMsg]);
@@ -107,28 +120,19 @@ const AiTutor = () => {
     }
   };
 
-  if (!isPremium) {
-    return (
-      <div className="mx-auto max-w-2xl px-4 py-16 text-center">
-        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-streak">
-            <Lock className="h-10 w-10 text-streak-foreground" />
-          </div>
-          <h1 className="text-3xl font-black text-foreground">Premium Feature</h1>
-          <p className="mt-2 text-muted-foreground">The AI Tutor is available for Premium members.</p>
-          <button
-            onClick={() => navigate("/premium")}
-            className="mt-6 rounded-2xl bg-gradient-streak px-8 py-4 text-lg font-black text-streak-foreground transition-transform hover:scale-[1.02]"
-          >
-            <Crown className="mr-2 inline h-5 w-5" /> Upgrade to Premium
-          </button>
-        </motion.div>
-      </div>
-    );
-  }
-
   return (
     <div className="mx-auto flex h-[calc(100vh-4rem)] max-w-3xl flex-col px-4 py-4">
+      {/* Usage banner for free users */}
+      {!isPremium && (
+        <div className="mb-3 flex items-center justify-between rounded-xl border-2 border-streak/30 bg-streak/5 px-4 py-2">
+          <span className="text-xs font-bold text-muted-foreground">
+            {aiRemaining > 0 ? `${aiRemaining} free message${aiRemaining !== 1 ? "s" : ""} remaining today` : "Daily limit reached"}
+          </span>
+          <button onClick={() => navigate("/premium")} className="flex items-center gap-1 rounded-lg bg-gradient-streak px-3 py-1 text-xs font-bold text-streak-foreground">
+            <Crown className="h-3 w-3" /> Unlimited
+          </button>
+        </div>
+      )}
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">

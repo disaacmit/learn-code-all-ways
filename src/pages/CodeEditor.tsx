@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Play, RotateCcw, Copy, Check, Loader2, Crown, Lock } from "lucide-react";
+import { Play, RotateCcw, Copy, Check, Loader2, Crown } from "lucide-react";
 import { languages } from "@/data/languages";
 import { usePremium } from "@/contexts/PremiumContext";
+import { useUsage } from "@/contexts/UsageContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -34,27 +35,18 @@ const CodeEditor = () => {
   const { isPremium } = usePremium();
   const navigate = useNavigate();
 
-  if (!isPremium) {
-    return (
-      <div className="mx-auto max-w-2xl px-4 py-16 text-center">
-        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-streak">
-            <Lock className="h-10 w-10 text-streak-foreground" />
-          </div>
-          <h1 className="text-3xl font-black text-foreground">Premium Feature</h1>
-          <p className="mt-2 text-muted-foreground">The interactive code editor is available for Premium members.</p>
-          <button
-            onClick={() => navigate("/premium")}
-            className="mt-6 rounded-2xl bg-gradient-streak px-8 py-4 text-lg font-black text-streak-foreground transition-transform hover:scale-[1.02]"
-          >
-            <Crown className="mr-2 inline h-5 w-5" /> Upgrade to Premium
-          </button>
-        </motion.div>
-      </div>
-    );
-  }
+  const { canRunCode, trackCodeRun, codeRunsRemaining } = useUsage();
 
   const handleRun = async () => {
+    if (!canRunCode) {
+      toast.error("Daily free limit reached! Upgrade to Premium for unlimited runs.");
+      return;
+    }
+    if (!trackCodeRun()) {
+      toast.error("Daily free limit reached! Upgrade to Premium for unlimited runs.");
+      return;
+    }
+
     if (selectedLang === "javascript") {
       try {
         const logs: string[] = [];
@@ -112,6 +104,17 @@ const CodeEditor = () => {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
+      {/* Usage banner for free users */}
+      {!isPremium && (
+        <div className="mb-4 flex items-center justify-between rounded-xl border-2 border-streak/30 bg-streak/5 px-4 py-2">
+          <span className="text-xs font-bold text-muted-foreground">
+            {codeRunsRemaining > 0 ? `${codeRunsRemaining} free run${codeRunsRemaining !== 1 ? "s" : ""} remaining today` : "Daily limit reached"}
+          </span>
+          <button onClick={() => navigate("/premium")} className="flex items-center gap-1 rounded-lg bg-gradient-streak px-3 py-1 text-xs font-bold text-streak-foreground">
+            <Crown className="h-3 w-3" /> Unlimited
+          </button>
+        </div>
+      )}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="text-3xl font-black text-foreground">Code Editor 💻</h1>
         <p className="mt-1 text-muted-foreground">Write, test, and experiment with code in any language</p>
