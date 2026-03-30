@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Play, RotateCcw, Copy, Check, Loader2, Crown, Lock } from "lucide-react";
+import { Play, RotateCcw, Copy, Check, Loader2, Crown } from "lucide-react";
 import { languages } from "@/data/languages";
 import { usePremium } from "@/contexts/PremiumContext";
+import { useUsage } from "@/contexts/UsageContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
