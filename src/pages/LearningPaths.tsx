@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Route, Sparkles, ArrowRight, BookOpen, Trophy, Target } from "lucide-react";
+import { Route, Sparkles, ArrowRight, BookOpen, Trophy, Target, Lock, Crown } from "lucide-react";
 import { languages } from "@/data/languages";
 import { useNavigate } from "react-router-dom";
+import { usePremium } from "@/contexts/PremiumContext";
 
 interface LearningPath {
   id: string;
@@ -92,6 +93,7 @@ const skillQuestions = [
 
 const LearningPaths = () => {
   const navigate = useNavigate();
+  const { isPremium } = usePremium();
   const [showAssessment, setShowAssessment] = useState(false);
   const [assessmentStep, setAssessmentStep] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
@@ -124,6 +126,26 @@ const LearningPaths = () => {
     setAnswers([]);
     setRecommended(null);
   };
+
+  if (!isPremium) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-16 text-center">
+        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-streak">
+            <Lock className="h-10 w-10 text-streak-foreground" />
+          </div>
+          <h1 className="text-3xl font-black text-foreground">Premium Feature</h1>
+          <p className="mt-2 text-muted-foreground">Personalized learning paths are available for Premium members.</p>
+          <button
+            onClick={() => navigate("/premium")}
+            className="mt-6 rounded-2xl bg-gradient-streak px-8 py-4 text-lg font-black text-streak-foreground transition-transform hover:scale-[1.02]"
+          >
+            <Crown className="mr-2 inline h-5 w-5" /> Upgrade to Premium
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
 
   if (showAssessment && !recommended) {
     const q = skillQuestions[assessmentStep];

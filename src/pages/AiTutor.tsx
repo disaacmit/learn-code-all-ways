@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Bot, User, Sparkles, Loader2 } from "lucide-react";
+import { Send, Bot, User, Sparkles, Loader2, Lock, Crown } from "lucide-react";
 import { languages } from "@/data/languages";
+import { usePremium } from "@/contexts/PremiumContext";
+import { useNavigate } from "react-router-dom";
 
 interface Message {
   role: "user" | "assistant";
@@ -23,6 +25,8 @@ const AiTutor = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedLang, setSelectedLang] = useState("javascript");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { isPremium } = usePremium();
+  const navigate = useNavigate();
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -102,6 +106,26 @@ const AiTutor = () => {
       setIsLoading(false);
     }
   };
+
+  if (!isPremium) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-16 text-center">
+        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-streak">
+            <Lock className="h-10 w-10 text-streak-foreground" />
+          </div>
+          <h1 className="text-3xl font-black text-foreground">Premium Feature</h1>
+          <p className="mt-2 text-muted-foreground">The AI Tutor is available for Premium members.</p>
+          <button
+            onClick={() => navigate("/premium")}
+            className="mt-6 rounded-2xl bg-gradient-streak px-8 py-4 text-lg font-black text-streak-foreground transition-transform hover:scale-[1.02]"
+          >
+            <Crown className="mr-2 inline h-5 w-5" /> Upgrade to Premium
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto flex h-[calc(100vh-4rem)] max-w-3xl flex-col px-4 py-4">
