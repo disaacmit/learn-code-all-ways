@@ -122,6 +122,17 @@ const AiTutor = () => {
 
   return (
     <div className="mx-auto flex h-[calc(100vh-4rem)] max-w-3xl flex-col px-4 py-4">
+      {/* Usage banner for free users */}
+      {!isPremium && (
+        <div className="mb-3 flex items-center justify-between rounded-xl border-2 border-streak/30 bg-streak/5 px-4 py-2">
+          <span className="text-xs font-bold text-muted-foreground">
+            {aiRemaining > 0 ? `${aiRemaining} free message${aiRemaining !== 1 ? "s" : ""} remaining today` : "Daily limit reached"}
+          </span>
+          <button onClick={() => navigate("/premium")} className="flex items-center gap-1 rounded-lg bg-gradient-streak px-3 py-1 text-xs font-bold text-streak-foreground">
+            <Crown className="h-3 w-3" /> Unlimited
+          </button>
+        </div>
+      )}
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
