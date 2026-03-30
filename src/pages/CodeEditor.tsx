@@ -1,15 +1,28 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Play, RotateCcw, Copy, Check } from "lucide-react";
+import { Play, RotateCcw, Copy, Check, Loader2, Crown, Lock } from "lucide-react";
 import { languages } from "@/data/languages";
+import { usePremium } from "@/contexts/PremiumContext";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+
+const RUN_CODE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/run-code`;
 
 const starterCode: Record<string, string> = {
   javascript: `// Welcome to the JavaScript playground!\nfunction greet(name) {\n  return "Hello, " + name + "!";\n}\n\nconsole.log(greet("World"));`,
-  python: `# Welcome to the Python playground!\ndef greet(name):\n    return f"Hello, {name}!"\n\nprint(greet("World"))`,
-  html: `<!-- Welcome to the HTML playground! -->\n<!DOCTYPE html>\n<html>\n<head>\n  <title>My Page</title>\n</head>\n<body>\n  <h1>Hello World!</h1>\n  <p>Start editing here...</p>\n</body>\n</html>`,
-  css: `/* Welcome to the CSS playground! */\nbody {\n  font-family: sans-serif;\n  background: #f0f0f0;\n}\n\nh1 {\n  color: #333;\n  text-align: center;\n}`,
   typescript: `// Welcome to the TypeScript playground!\ninterface User {\n  name: string;\n  age: number;\n}\n\nfunction greet(user: User): string {\n  return \`Hello, \${user.name}! You are \${user.age}.\`;\n}\n\nconsole.log(greet({ name: "World", age: 25 }));`,
+  java: `// Welcome to the Java playground!\npublic class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}`,
+  csharp: `// Welcome to the C# playground!\nusing System;\n\nclass Program {\n    static void Main() {\n        Console.WriteLine("Hello, World!");\n    }\n}`,
+  cpp: `// Welcome to the C++ playground!\n#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello, World!" << endl;\n    return 0;\n}`,
+  go: `// Welcome to the Go playground!\npackage main\n\nimport "fmt"\n\nfunc main() {\n    fmt.Println("Hello, World!")\n}`,
+  rust: `// Welcome to the Rust playground!\nfn main() {\n    println!("Hello, World!");\n}`,
+  swift: `// Welcome to the Swift playground!\nprint("Hello, World!")`,
+  kotlin: `// Welcome to the Kotlin playground!\nfun main() {\n    println("Hello, World!")\n}`,
+  php: `<?php\n// Welcome to the PHP playground!\necho "Hello, World!\\n";\n?>`,
+  ruby: `# Welcome to the Ruby playground!\nputs "Hello, World!"`,
+  python: `# Welcome to the Python playground!\ndef greet(name):\n    return f"Hello, {name}!"\n\nprint(greet("World"))`,
+  html: `<!-- Welcome to the HTML playground! -->\n<!DOCTYPE html>\n<html>\n<head>\n  <title>My Page</title>\n</head>\n<body>\n  <h1>Hello World!</h1>\n</body>\n</html>`,
+  css: `/* Welcome to the CSS playground! */\nbody {\n  font-family: sans-serif;\n  background: #f0f0f0;\n}\n\nh1 {\n  color: #333;\n  text-align: center;\n}`,
 };
 
 const CodeEditor = () => {
@@ -17,8 +30,31 @@ const CodeEditor = () => {
   const [code, setCode] = useState(starterCode.javascript);
   const [output, setOutput] = useState("");
   const [copied, setCopied] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
+  const { isPremium } = usePremium();
+  const navigate = useNavigate();
 
-  const handleRun = () => {
+  if (!isPremium) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-16 text-center">
+        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-streak">
+            <Lock className="h-10 w-10 text-streak-foreground" />
+          </div>
+          <h1 className="text-3xl font-black text-foreground">Premium Feature</h1>
+          <p className="mt-2 text-muted-foreground">The interactive code editor is available for Premium members.</p>
+          <button
+            onClick={() => navigate("/premium")}
+            className="mt-6 rounded-2xl bg-gradient-streak px-8 py-4 text-lg font-black text-streak-foreground transition-transform hover:scale-[1.02]"
+          >
+            <Crown className="mr-2 inline h-5 w-5" /> Upgrade to Premium
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
+
+  const handleRun = async () => {
     if (selectedLang === "javascript") {
       try {
         const logs: string[] = [];
@@ -29,8 +65,30 @@ const CodeEditor = () => {
       } catch (e) {
         setOutput(`Error: ${e instanceof Error ? e.message : "Unknown error"}`);
       }
-    } else {
-      setOutput(`// ${languages.find((l) => l.id === selectedLang)?.name} output simulation\n// Code execution is available for JavaScript.\n// For other languages, use this as a scratchpad.`);
+      return;
+    }
+
+    // Use AI to simulate execution for other languages
+    setIsRunning(true);
+    setOutput("⏳ Running...");
+    try {
+      const langName = languages.find((l) => l.id === selectedLang)?.name || selectedLang;
+      const resp = await fetch(RUN_CODE_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ code, language: langName }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || "Failed to run code");
+      setOutput(data.output);
+    } catch (e) {
+      setOutput(`Error: ${e instanceof Error ? e.message : "Unknown error"}`);
+      toast.error("Failed to run code");
+    } finally {
+      setIsRunning(false);
     }
   };
 
@@ -56,10 +114,9 @@ const CodeEditor = () => {
     <div className="mx-auto max-w-5xl px-4 py-8">
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="text-3xl font-black text-foreground">Code Editor 💻</h1>
-        <p className="mt-1 text-muted-foreground">Write, test, and experiment with code</p>
+        <p className="mt-1 text-muted-foreground">Write, test, and experiment with code in any language</p>
       </motion.div>
 
-      {/* Toolbar */}
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <select
           value={selectedLang}
@@ -72,6 +129,9 @@ const CodeEditor = () => {
             </option>
           ))}
         </select>
+        {selectedLang !== "javascript" && (
+          <span className="rounded-lg bg-primary/10 px-2 py-1 text-xs font-bold text-primary">AI-Powered Execution</span>
+        )}
         <div className="flex-1" />
         <button onClick={handleCopy} className="flex items-center gap-1.5 rounded-xl border-2 border-border px-3 py-2 text-sm font-bold text-muted-foreground hover:text-foreground">
           {copied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
@@ -80,12 +140,16 @@ const CodeEditor = () => {
         <button onClick={handleReset} className="flex items-center gap-1.5 rounded-xl border-2 border-border px-3 py-2 text-sm font-bold text-muted-foreground hover:text-foreground">
           <RotateCcw className="h-4 w-4" /> Reset
         </button>
-        <button onClick={handleRun} className="flex items-center gap-1.5 rounded-2xl bg-gradient-hero px-5 py-2 text-sm font-bold text-primary-foreground transition-transform hover:scale-105">
-          <Play className="h-4 w-4" /> Run
+        <button
+          onClick={handleRun}
+          disabled={isRunning}
+          className="flex items-center gap-1.5 rounded-2xl bg-gradient-hero px-5 py-2 text-sm font-bold text-primary-foreground transition-transform hover:scale-105 disabled:opacity-50"
+        >
+          {isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+          {isRunning ? "Running..." : "Run"}
         </button>
       </div>
 
-      {/* Editor + Output */}
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <div className="overflow-hidden rounded-2xl border-2 border-border bg-card">
           <div className="border-b border-border bg-muted px-4 py-2 text-xs font-bold text-muted-foreground">

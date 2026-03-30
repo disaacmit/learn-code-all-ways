@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Bot, User, Sparkles, Loader2 } from "lucide-react";
+import { Send, Bot, User, Sparkles, Loader2, Lock, Crown } from "lucide-react";
 import { languages } from "@/data/languages";
+import { usePremium } from "@/contexts/PremiumContext";
+import { useNavigate } from "react-router-dom";
 
 interface Message {
   role: "user" | "assistant";
