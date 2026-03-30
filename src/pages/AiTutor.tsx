@@ -23,6 +23,8 @@ const AiTutor = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedLang, setSelectedLang] = useState("javascript");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { isPremium } = usePremium();
+  const navigate = useNavigate();
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
