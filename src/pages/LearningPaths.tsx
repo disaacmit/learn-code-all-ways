@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Route, Sparkles, ArrowRight, BookOpen, Trophy, Target } from "lucide-react";
+import { Route, Sparkles, ArrowRight, BookOpen, Trophy, Target, Lock, Crown } from "lucide-react";
 import { languages } from "@/data/languages";
 import { useNavigate } from "react-router-dom";
+import { usePremium } from "@/contexts/PremiumContext";
 
 interface LearningPath {
   id: string;
