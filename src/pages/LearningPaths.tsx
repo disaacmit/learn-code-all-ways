@@ -93,6 +93,7 @@ const skillQuestions = [
 
 const LearningPaths = () => {
   const navigate = useNavigate();
+  const { isPremium } = usePremium();
   const [showAssessment, setShowAssessment] = useState(false);
   const [assessmentStep, setAssessmentStep] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
