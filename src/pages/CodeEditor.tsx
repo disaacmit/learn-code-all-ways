@@ -38,6 +38,15 @@ const CodeEditor = () => {
   const { canRunCode, trackCodeRun, codeRunsRemaining } = useUsage();
 
   const handleRun = async () => {
+    if (!canRunCode) {
+      toast.error("Daily free limit reached! Upgrade to Premium for unlimited runs.");
+      return;
+    }
+    if (!trackCodeRun()) {
+      toast.error("Daily free limit reached! Upgrade to Premium for unlimited runs.");
+      return;
+    }
+
     if (selectedLang === "javascript") {
       try {
         const logs: string[] = [];

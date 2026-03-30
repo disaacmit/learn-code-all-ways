@@ -72,7 +72,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <PremiumProvider>
-            <AppRoutes />
+            <AppContent />
           </PremiumProvider>
         </AuthProvider>
       </BrowserRouter>
